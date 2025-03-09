@@ -1,0 +1,52 @@
+{
+  "name": "knowledge-base-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 5800",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,scss}",
+    "prettier:check": "prettier --check --ignore-path .prettierignore ."
+  },
+  "dependencies": {
+    "@livekit/components-react": "^2.8.1",
+    "@livekit/components-styles": "^1.1.4",
+    "@tailwindcss/postcss": "^4.0.8",
+    "@tanstack/react-query": "^5.66.9",
+    "axios": "^1.7.9",
+    "clsx": "^2.0.0",
+    "dayjs": "^1.11.13",
+    "jwt-decode": "^4.0.0",
+    "livekit-client": "^2.9.5",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.4.0",
+    "react-toastify": "^11.0.5",
+    "sass": "^1.85.0",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@tanstack/eslint-plugin-query": "^5.66.1",
+    "@types/node": "22.13.5",
+    "@types/react": "^19.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.21.0",
+    "eslint-config-next": "^15.1.7",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "next-sitemap": "^4.2.3",
+    "postcss": "^8.5.3",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.7.3"
+  }
+}
