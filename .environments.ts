@@ -9,4 +9,5 @@ export const ENV = {
 
   apiUrl: process.env.NEXT_PUBLIC_API_URL,
   appMode: process.env.NEXT_PUBLIC_APP_MODE,
+  liveKitUrl: process.env.NEXT_PUBLIC_LIVEKIT_SERVER_URL,
 };

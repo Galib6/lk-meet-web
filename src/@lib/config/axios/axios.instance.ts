@@ -15,8 +15,8 @@ export const AxiosInstance = axios.create({
 });
 AxiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    config.headers['Authorization'] = `Bearer ${getAuthToken()}`;
     config.baseURL = ENV.apiUrl;
+    config.headers['Authorization'] = `Bearer ${getAuthToken()}`;
 
     return config;
   },

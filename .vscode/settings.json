@@ -15,6 +15,7 @@
   ],
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "cSpell.words": [
-    "Knowledgebase"
+    "Knowledgebase",
+    "LIVEKIT"
   ]
 }
