@@ -1,10 +1,10 @@
 import { ENV } from '.environments';
-import { AxiosInstance } from '@lib/config';
 import { ICountriesResponse, ICreateMeetingSession } from '@lib/interface/meetingSession.interfaces';
+import { AxiosInstance } from 'src/@base/config';
 
 import { ErrorHandler } from '@lib/utils/errorHandler';
 import { $$ } from '@lib/utils/functions';
-import { IBaseFilter, IBaseResponse } from 'src/@base/interfaces';
+import { IBaseFilter, IBaseResponse } from 'src/@base/interfaces/interfaces';
 
 export const Services = {
   async findCountries(options: IBaseFilter): Promise<ICountriesResponse> {

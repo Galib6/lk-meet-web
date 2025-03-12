@@ -1,6 +1,6 @@
-import { AxiosInstance } from '@lib/config';
 import { ErrorHandler } from '@lib/utils/errorHandler';
-import { IBaseResponse } from 'src/@base/interfaces';
+import { AxiosInstance } from 'src/@base/config';
+import { IBaseResponse } from 'src/@base/interfaces/interfaces';
 import {
   IChangeGeneratedPass,
   IChangePass,

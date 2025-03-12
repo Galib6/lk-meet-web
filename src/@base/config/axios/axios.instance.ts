@@ -3,7 +3,7 @@ import { getAuthToken } from '@components/auth/lib/utils';
 import { cookies } from '@lib/utils/cookies';
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'react-toastify';
-import { IBaseResponse } from 'src/@base/interfaces';
+import { IBaseResponse } from 'src/@base/interfaces/interfaces';
 
 // const headers = {
 //   Authorization: `Bearer ${getAuthToken()}`,

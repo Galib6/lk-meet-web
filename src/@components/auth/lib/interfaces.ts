@@ -1,4 +1,4 @@
-import { IBaseResponse, IdType } from './../../../@base/interfaces';
+import { IBaseResponse, IdType } from '../../../@base/interfaces/interfaces';
 
 export interface IFlogin {
   email: string;

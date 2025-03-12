@@ -1,5 +1,5 @@
 import { ENUM_MEETING_SESSION_TYPE } from '@lib/enums';
-import { IBaseEntity, IBaseFilter, IBaseResponse } from 'src/@base/interfaces';
+import { IBaseEntity, IBaseFilter, IBaseResponse } from 'src/@base/interfaces/interfaces';
 
 export interface IMeetingSessionFilter extends IBaseFilter {}
 

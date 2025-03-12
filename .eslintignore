@@ -1,0 +1,6 @@
+.cache
+.next
+.vscode
+node_modules
+public
+playground

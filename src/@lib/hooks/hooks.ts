@@ -1,7 +1,7 @@
-import { MutationConfig, QueryConfig } from '@lib/config';
 import { Services } from '@lib/services/service';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { IBaseFilter } from 'src/@base/interfaces';
+import { MutationConfig, QueryConfig } from 'src/@base/config';
+import { IBaseFilter } from 'src/@base/interfaces/interfaces';
 
 //---------------- useCountry hook ------------------------------------
 type IUseCountry = {

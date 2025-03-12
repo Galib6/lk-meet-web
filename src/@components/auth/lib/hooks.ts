@@ -1,5 +1,5 @@
-import { MutationConfig } from '@lib/config';
 import { useMutation } from '@tanstack/react-query';
+import { MutationConfig } from 'src/@base/config';
 import { AuthService } from './service';
 import { clearAuthSession } from './utils';
 

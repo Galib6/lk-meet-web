@@ -3,11 +3,11 @@ import GoogleIcon from '@components/auth/components/Google';
 import SignUpIllustration from '@components/auth/components/SignUpIllustration';
 import { useSignup } from '@components/auth/lib/hooks';
 import { setAuthSession } from '@components/auth/lib/utils';
-import { Paths, pathToUrl } from '@lib/constants/paths';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import { Paths, pathToUrl } from 'src/@base/constants/paths';
 
 const SignUp = () => {
   const router = useRouter();

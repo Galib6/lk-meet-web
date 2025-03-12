@@ -11,7 +11,7 @@ export const Paths = {
   webCall: {
     root: '/web-call',
     waitingPage: '/web-call/waiting-room',
-    toRoomPage: (name, token) => `/room/${name}?token=${token}`,
+    toRoomPage: (name) => `/room/${name}`,
   },
 };
 

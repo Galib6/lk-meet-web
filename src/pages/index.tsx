@@ -3,14 +3,17 @@
 import { getAuthSession } from '@components/auth/lib/utils';
 import Header from '@components/home/Header';
 import Slider from '@components/home/Slider';
-import { SOCKET_EVENT } from '@lib/constants/meetingSessionEvent';
-import { Paths } from '@lib/constants/paths';
+
 import { ENUM_MEETING_SESSION_TYPE } from '@lib/enums';
 import { useMeetingSessionCreate } from '@lib/hooks/hooks';
 import { Calendar, ChevronDown, Video } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
+import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
+import { Paths } from 'src/@base/constants/paths';
+import { localStorageSate } from 'src/@base/constants/storage';
+import useLocalStorage from 'src/@base/hooks/useLocalStorage';
 
 export default function GoogleMeetClone() {
   const router = useRouter();
@@ -18,6 +21,7 @@ export default function GoogleMeetClone() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [_connectionDetails, setConnectionDetails] = useLocalStorage(localStorageSate?.connectionDetails);
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
@@ -57,7 +61,8 @@ export default function GoogleMeetClone() {
     });
 
     socketConnection.on(SOCKET_EVENT.CONNECTION_DETAILS, (data) => {
-      router.push(Paths.webCall.toRoomPage(data?.roomName, data?.participantToken));
+      setConnectionDetails({ token: data?.token });
+      router.push(Paths.webCall.toRoomPage(data?.roomName));
     });
   }, [auth?.user?.id]);
 

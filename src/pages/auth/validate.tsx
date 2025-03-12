@@ -3,7 +3,7 @@ import { setAuthSession } from '@components/auth/lib/utils';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
-import Spinner from 'src/@base/Spinner';
+import Spinner from 'src/@base/components/Spinner';
 
 const AuthValidate = () => {
   const router = useRouter();
