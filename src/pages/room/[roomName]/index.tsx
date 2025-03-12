@@ -1,52 +1,30 @@
-import { ENV } from '.environments';
-import { LiveKitRoom, RoomAudioRenderer, VideoConference, formatChatMessageLinks } from '@livekit/components-react';
+import { getAuthSession } from '@components/auth/lib/utils';
+import LiveKitRoomCom from '@components/home/LiveKitRoomCom';
+import WaitingRoom from '@components/home/WaitingRoom';
 import '@livekit/components-styles';
-import { RoomConnectOptions } from 'livekit-client';
-import { useEffect, useMemo } from 'react';
 import { localStorageSate } from 'src/@base/constants/storage';
 import useLocalStorage from 'src/@base/hooks/useLocalStorage';
 
 export default function Index() {
+  const auth = getAuthSession();
   const [connectionDetails] = useLocalStorage(localStorageSate?.connectionDetails);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        await navigator.mediaDevices.getUserMedia({ video: true });
-      } catch (e) {
-        console.error('Error accessing video:', e);
-      }
-    })();
-  }, []);
+  const renderContent = () => {
+    switch (true) {
+      case connectionDetails?.token && !connectionDetails?.own:
+        return (
+          <>
+            <LiveKitRoomCom />
+          </>
+        );
+      case connectionDetails?.token && connectionDetails?.own:
+        return <LiveKitRoomCom />;
+      case !connectionDetails?.token && !connectionDetails?.own:
+        return <WaitingRoom userName={auth?.user?.name} />;
+      default:
+        return;
+    }
+  };
 
-  const connectOptions = useMemo((): RoomConnectOptions => {
-    return {
-      autoSubscribe: true,
-    };
-  }, []);
-
-  if (connectionDetails?.token === '') {
-    return <div>Getting token...</div>;
-  }
-
-  return (
-    <LiveKitRoom
-      video={true}
-      audio={true}
-      token={connectionDetails?.token}
-      serverUrl={ENV.liveKitUrl}
-      connectOptions={connectOptions}
-      // Use the default LiveKit theme for nice styles.
-      data-lk-theme="default"
-      style={{ height: '100dvh' }}
-      onDisconnected={() => window.location.replace('/')}
-    >
-      <VideoConference chatMessageFormatter={formatChatMessageLinks} />
-      {/* The RoomAudioRenderer takes care of room-wide audio for you. */}
-      <RoomAudioRenderer />
-      {/* Controls for the user to start/stop audio, video, and screen
-        share tracks and to leave the room. */}
-      {/* <ControlBar /> */}
-    </LiveKitRoom>
-  );
+  return <div>{renderContent()}</div>;
 }

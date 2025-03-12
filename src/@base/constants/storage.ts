@@ -9,6 +9,8 @@ interface ILocalStorageState {
     key: string;
     initialValue: {
       token: string;
+      roomName: string;
+      own?: boolean;
     };
   };
 }
@@ -16,6 +18,10 @@ interface ILocalStorageState {
 export const localStorageSate: ILocalStorageState = {
   connectionDetails: {
     key: '_jhzsgfcsd',
-    initialValue: null,
+    initialValue: {
+      token: null,
+      roomName: null,
+      own: false,
+    },
   },
 };

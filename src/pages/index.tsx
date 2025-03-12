@@ -27,6 +27,10 @@ export default function GoogleMeetClone() {
     setDropdownOpen(!dropdownOpen);
   };
 
+  useEffect(() => {
+    setConnectionDetails(null);
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,8 +65,8 @@ export default function GoogleMeetClone() {
     });
 
     socketConnection.on(SOCKET_EVENT.CONNECTION_DETAILS, (data) => {
-      setConnectionDetails({ token: data?.token });
-      router.push(Paths.webCall.toRoomPage(data?.roomName));
+      setConnectionDetails({ roomName: data?.roomName, own: true, token: data?.participantToken });
+      router.push(Paths.meeting.toRoomPage(data?.roomName));
     });
   }, [auth?.user?.id]);
 

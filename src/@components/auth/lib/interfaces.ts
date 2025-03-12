@@ -110,6 +110,7 @@ export interface ISession {
   user: {
     id: IdType;
     email: string;
+    name?: string;
   };
   expires: Date;
   token: string;
