@@ -11,7 +11,8 @@ import { Paths, pathToUrl } from 'src/@base/constants/paths';
 const SignIn = () => {
   const router = useRouter();
   let callbackUrl = router.query?.callbackUrl?.toString();
-  const webRedirectUrl = `${pathToUrl(Paths.auth.validate)}?callbackUrl=${callbackUrl}`;
+  const webRedirectUrl = `${pathToUrl(Paths.auth.validate)}?callbackUrl=${callbackUrl ?? '/'}`;
+  console.log(webRedirectUrl);
   const [formValues, setFormValues] = useState({
     email: '',
     password: '',

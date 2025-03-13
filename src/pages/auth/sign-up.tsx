@@ -13,7 +13,7 @@ const SignUp = () => {
   const router = useRouter();
   let callbackUrl = router.query?.callbackUrl?.toString();
   callbackUrl = callbackUrl ? callbackUrl : pathToUrl('');
-  const webRedirectUrl = `${pathToUrl(Paths.auth.validate)}?callbackUrl=${callbackUrl}`;
+  const webRedirectUrl = `${pathToUrl(Paths.auth.validate)}?callbackUrl=${callbackUrl ?? '/'}`;
 
   const signUpFn = useSignup({
     config: {

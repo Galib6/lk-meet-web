@@ -41,7 +41,7 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
       data-lk-theme="default"
       style={{ height: '100dvh' }}
       onDisconnected={() => {
-        window.location.replace('/');
+        // window.location.replace('/');
       }}
     >
       <VideoConference chatMessageFormatter={formatChatMessageLinks} />
