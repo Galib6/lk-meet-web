@@ -6,10 +6,10 @@ import Slider from '@components/home/Slider';
 
 import { ENUM_MEETING_SESSION_TYPE } from '@lib/enums';
 import { useMeetingSessionCreate } from '@lib/hooks/hooks';
+import { socketService } from '@lib/services/socket';
 import { Calendar, ChevronDown, Video } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
 import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
 import { Paths } from 'src/@base/constants/paths';
 import { localStorageSate } from 'src/@base/constants/storage';
@@ -59,16 +59,29 @@ export default function GoogleMeetClone() {
   });
 
   useEffect(() => {
-    const socketConnection = io(`http://localhost:4800/meeting-session?userId=${auth?.user?.id}`, {
-      reconnection: true,
-      transports: ['websocket'],
-    });
+    if (!auth?.user?.id) return;
 
-    socketConnection.on(SOCKET_EVENT.CONNECTION_DETAILS, (data) => {
-      setConnectionDetails({ roomName: data?.roomName, own: true, token: data?.participantToken });
-      router.push(Paths.meeting.toRoomPage(data?.roomName));
-    });
-  }, [auth?.user?.id]);
+    const userId = auth.user.id.toString();
+    socketService.connect(userId);
+
+    const handleConnectionDetails = (data) => {
+      if (!data?.roomName || !data?.participantToken) return;
+
+      setConnectionDetails({
+        roomName: data.roomName,
+        isAdmin: true,
+        token: data.participantToken,
+      });
+      router.push(Paths.meeting.toRoomPage(data.roomName));
+    };
+
+    socketService.on(SOCKET_EVENT.CONNECTION_DETAILS, handleConnectionDetails, userId);
+
+    // Cleanup function
+    return () => {
+      socketService.off(SOCKET_EVENT.CONNECTION_DETAILS, handleConnectionDetails, userId);
+    };
+  }, [auth?.user?.id, router]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -110,6 +123,13 @@ export default function GoogleMeetClone() {
                       <button
                         className="flex w-full items-center px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => {
+                          if (!auth?.user?.id) {
+                            router.push({
+                              pathname: Paths.auth.login,
+                              query: { callbackUrl: router.asPath },
+                            });
+                            return;
+                          }
                           createMeetingSessionFn.mutate({ sessionType: ENUM_MEETING_SESSION_TYPE.public });
                           setDropdownOpen(false);
                         }}

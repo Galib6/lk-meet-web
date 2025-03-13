@@ -11,18 +11,17 @@ type Config<T> = {
   key: string;
   initialValue: T;
 };
+
 const useLocalStorage = <T = any>(
   config: Config<T>,
-): [LocalStorageValue<T>, (value: T | ((val: LocalStorageValue<T>) => T)) => void, () => void] => {
-  const [storedValue, setStoredValue] = useState<LocalStorageValue<T>>(config.initialValue);
+): [LocalStorageValue<T>, (value: T | ((val: LocalStorageValue<T>) => T)) => void, boolean] => {
+  const [storedValue, setStoredValue] = useState<LocalStorageValue<T>>(null);
+  const [loading, setLoading] = useState(true);
 
   // Update the localStorage whenever the state changes
   const setValue = (value: T | ((val: LocalStorageValue<T>) => T)) => {
     try {
-      // Allow value to be a function so we have the same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
-
-      // Save to localStorage
       localStorage.setItem(config.key, JSON.stringify(valueToStore));
 
       const event = new Event('onChangeLocalStorage') as ILocalStorageEvent;
@@ -47,9 +46,9 @@ const useLocalStorage = <T = any>(
     }
   };
 
-  // Update the state when localStorage changes
   useEffect(() => {
-    setStoredValue(getValue()); // Use to load the value from localStorage on the client side
+    setStoredValue(getValue());
+    setLoading(false);
 
     const handleChange = (e: ILocalStorageEvent) => {
       if (e.key !== config.key || e.type !== 'onChangeLocalStorage') return;
@@ -62,13 +61,7 @@ const useLocalStorage = <T = any>(
     };
   }, []);
 
-  // Clear the localStorage
-  const clear = () => {
-    setValue(null);
-    localStorage.removeItem(config.key);
-  };
-
-  return [storedValue, setValue, clear];
+  return [storedValue, setValue, loading];
 };
 
 export default useLocalStorage;

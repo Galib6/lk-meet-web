@@ -1,18 +1,18 @@
+import { ICreateSessionRequest } from '@lib/interface/meetingSession.interfaces';
 import { Services } from '@lib/services/service';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { MutationConfig, QueryConfig } from 'src/@base/config';
-import { IBaseFilter } from 'src/@base/interfaces/interfaces';
+import { MutationConfig, queryClient, QueryConfig } from 'src/@base/config';
 
 //---------------- useCountry hook ------------------------------------
-type IUseCountry = {
-  options: IBaseFilter;
-  config?: QueryConfig<typeof Services.findCountries>;
+type IUseCreateSessionRequest = {
+  options: ICreateSessionRequest;
+  config?: QueryConfig<typeof Services.createSessionRequest>;
 };
-export const useCountries = ({ options, config }: IUseCountry) => {
+export const useCreateSessionRequest = ({ options, config }: IUseCreateSessionRequest) => {
   return useQuery({
     ...config,
-    queryKey: [Services.findCountries.name, options],
-    queryFn: () => Services.findCountries(options),
+    queryKey: [Services.createSessionRequest.name, options],
+    queryFn: () => Services.createSessionRequest(options),
   });
 };
 
@@ -27,6 +27,37 @@ export const useMeetingSessionCreate = ({ config }: IUseMeetingSessionCreate = {
     mutationFn: Services.createMeetingSession,
     onSettled: (data) => {
       if (!data?.success) return;
+    },
+  });
+};
+
+//---------------- useCountry hook ------------------------------------
+type IUseGetRequestList = {
+  options: ICreateSessionRequest;
+  config?: QueryConfig<typeof Services.getMeetingRequestList>;
+};
+export const useGetMeetingSessionRequests = ({ options, config }: IUseGetRequestList) => {
+  return useQuery({
+    ...config,
+    queryKey: [Services.getMeetingRequestList.name, options],
+    queryFn: () => Services.getMeetingRequestList(options),
+  });
+};
+
+//------------------ useMeetingSessionCreate hook ---------------------------------
+type IUseUpdateSessionRequest = {
+  config?: MutationConfig<typeof Services.changeRequestStatus>;
+};
+
+export const useUpdateSessionRequest = ({ config }: IUseUpdateSessionRequest = {}) => {
+  return useMutation({
+    ...config,
+    mutationFn: Services.changeRequestStatus,
+    onSettled: (data) => {
+      if (!data?.success) return;
+      queryClient.invalidateQueries({
+        queryKey: [Services.getMeetingRequestList.name],
+      });
     },
   });
 };

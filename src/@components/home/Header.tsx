@@ -1,6 +1,8 @@
+import { useAuthSession } from '@components/auth/lib/utils';
 import { Grid, HelpCircle, MessageSquare, Rabbit, Settings } from 'lucide-react';
 
 const Header = () => {
+  const { user } = useAuthSession();
   return (
     <header className="sticky top-0 flex items-center justify-between border-b px-4 py-3 sm:px-6">
       <div className="flex items-center">
@@ -25,9 +27,17 @@ const Header = () => {
         <button className="rounded-full p-1 hover:bg-gray-100 sm:p-2">
           <Grid className="h-4 w-4 text-gray-600 sm:h-5 sm:w-5" />
         </button>
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-200 sm:h-8 sm:w-8">
-          <span className="text-xs font-medium sm:text-sm">U</span>
-        </div>
+        {user && (
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-200 sm:h-8 sm:w-8">
+            <span className="text-xs font-medium sm:text-sm">
+              {user?.name
+                ?.split(' ')
+                .map((item) => item?.[0])
+                .join('')
+                .slice(0, 2)}
+            </span>
+          </div>
+        )}
       </div>
     </header>
   );

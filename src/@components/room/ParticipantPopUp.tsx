@@ -1,11 +1,34 @@
 'use client';
 
-import { ChevronDown, Mic, MicOff, Search, UsersRound, X } from 'lucide-react';
+import { ENUM_MEETING_ENTRY_APPROVAL_STATUS } from '@lib/enums';
+import { useUpdateSessionRequest } from '@lib/hooks/hooks';
+import { IMeetingSessionRequest } from '@lib/interface/meetingSession.interfaces';
+import { useRemoteParticipants } from '@livekit/components-react';
+import { Check, ChevronDown, Mic, MicOff, Search, UsersRound, Video, VideoOff, X, XIcon } from 'lucide-react';
+import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
+import { localStorageSate } from 'src/@base/constants/storage';
+import useLocalStorage from 'src/@base/hooks/useLocalStorage';
 
-export default function ParticipantsPopup() {
+export default function ParticipantsPopup({
+  meetingSessionRequests,
+}: {
+  meetingSessionRequests: IMeetingSessionRequest[];
+}) {
+  const router = useRouter();
+  const { roomName } = router?.query;
+  const [connectionDetails, _setConnectionDetails, isLoading] = useLocalStorage(localStorageSate?.connectionDetails);
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+  const remoteParticipants = useRemoteParticipants();
+
+  const updateSessionRequestFn = useUpdateSessionRequest({
+    config: {
+      onSuccess(res) {
+        if (!res?.success) return;
+      },
+    },
+  });
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -21,45 +44,27 @@ export default function ParticipantsPopup() {
     };
   }, []);
 
-  const participants = [
-    { id: 1, name: 'Casey Cecil', status: 'Admin', avatar: '/placeholder.svg?height=40&width=40', waiting: false },
-    { id: 2, name: 'Mike Nolan', status: 'Joining...', avatar: '/placeholder.svg?height=40&width=40', waiting: false },
-    {
-      id: 3,
-      name: 'Marketing Huddle',
-      status: '',
-      avatar: '/placeholder.svg?height=40&width=40',
-      waiting: false,
-      audioOff: true,
-    },
-    {
-      id: 4,
-      name: 'Victoria Ripes (Host, You)',
-      status: '',
-      avatar: '/placeholder.svg?height=40&width=40',
-      waiting: false,
-      audioOff: true,
-    },
-    {
-      id: 5,
-      name: 'Henry Park',
-      status: '',
-      avatar: '/placeholder.svg?height=40&width=40',
-      waiting: false,
-      audioOff: true,
-    },
-    { id: 6, name: 'Stephen Hill', status: '', avatar: '/placeholder.svg?height=40&width=40', waiting: true },
-    { id: 7, name: 'Christian Park', status: 'Mobile', avatar: '/placeholder.svg?height=40&width=40', waiting: true },
-    { id: 8, name: 'Henry Park', status: 'Declined', avatar: '/placeholder.svg?height=40&width=40', waiting: true },
-    { id: 9, name: 'Jane Nolan', status: 'No response', avatar: '/placeholder.svg?height=40&width=40', waiting: true },
-  ];
+  const participants = remoteParticipants.map((p) => ({
+    name: p.name,
+    id: p?.identity,
+    audioOff: !p.isMicrophoneEnabled,
+    videoOff: !p.isCameraEnabled,
+  }));
+
+  const waitingRoomParticipants =
+    meetingSessionRequests?.map((p) => ({
+      name: `${p?.user?.firstName} ${p?.user?.lastName}`,
+      id: p?.user?.id,
+      avatar: p?.user?.avatar,
+    })) || [];
+  // { id: 1, name: 'Casey Cecil', status: 'Admin', avatar: '/placeholder.svg?height=40&width=40', waiting: false },
 
   return (
     <div className="relative">
       {/* Floating button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-10 rounded-full bg-red-500 p-3 text-white shadow-lg transition-colors hover:bg-red-600"
+        className="fixed right-4 top-4 z-10 rounded-full bg-red-500 p-3 text-white shadow-lg transition-colors hover:bg-red-600 md:bottom-4 md:top-auto"
         aria-label="Show participants"
       >
         <UsersRound className="h-4 w-4" />
@@ -92,91 +97,133 @@ export default function ParticipantsPopup() {
         </div>
 
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 170px)' }}>
-          <div className="border-b p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-1 text-sm font-medium text-black">
-                Waiting Room <span className="text-gray-500">(2)</span>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+          {!isLoading && connectionDetails.isAdmin && (
+            <div className="border-b p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-1 text-sm font-medium text-black">
+                  Waiting Room <span className="text-gray-500">({waitingRoomParticipants?.length})</span>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      updateSessionRequestFn.mutate({
+                        requestsIds: [...waitingRoomParticipants.map((p) => p.id)],
+                        status: ENUM_MEETING_ENTRY_APPROVAL_STATUS.approved,
+                        roomName: roomName?.toString(),
+                      })
+                    }
+                    className="text-sm text-blue-500"
+                  >
+                    Admit All
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button className="text-sm text-blue-500">Admit All</button>
-              </div>
-            </div>
 
-            {participants
-              .filter((p) => p.waiting)
-              .map((participant) => (
+              {waitingRoomParticipants.map((participant) => (
                 <div key={participant.id} className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-2">
-                    {/* <img
-                      src={participant.avatar || '/placeholder.svg'}
-                      alt={participant.name}
-                      className="h-8 w-8 rounded-full object-cover"
-                    /> */}
                     <div className="bg-gray-8 flex h-8 w-8 items-center justify-center rounded-full bg-gray-500 text-white">
                       {participant?.name
                         .split(' ')
                         .map((n) => n[0])
-                        .join('')}
+                        .join('')
+                        .slice(0, 2)}
                     </div>
                     <div>
                       <div className="text-sm font-medium text-black">{participant.name}</div>
-                      {participant.status && <div className="text-xs text-red-500">{participant.status}</div>}
                     </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        updateSessionRequestFn.mutate({
+                          requestsIds: [participant.id],
+                          status: ENUM_MEETING_ENTRY_APPROVAL_STATUS.approved,
+                          roomName: roomName?.toString(),
+                        })
+                      }
+                      className="rounded-full bg-green-100 p-1.5 text-green-600 hover:bg-green-200"
+                      aria-label="Admit participant"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        updateSessionRequestFn.mutate({
+                          requestsIds: [participant.id],
+                          status: ENUM_MEETING_ENTRY_APPROVAL_STATUS.rejected,
+                          roomName: roomName?.toString(),
+                        })
+                      }
+                      className="rounded-full bg-red-100 p-1.5 text-red-600 hover:bg-red-200"
+                      aria-label="Reject participant"
+                    >
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}
-          </div>
+            </div>
+          )}
 
           <div className="p-3">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1 text-sm font-medium text-black">
-                Meeting Participants <span className="text-gray-500">(4)</span>
+                Meeting Participants <span className="text-gray-500">({participants?.length})</span>
                 <ChevronDown className="h-4 w-4 text-gray-500" />
               </div>
             </div>
 
-            {participants
-              .filter((p) => !p.waiting)
-              .map((participant) => (
-                <div key={participant.id} className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-2">
-                    {/* <img
+            {participants.map((participant) => (
+              <div key={participant.id} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-2">
+                  {/* <img
                       src={participant.avatar || '/placeholder.svg'}
                       alt={participant.name}
                       className="h-8 w-8 rounded-full object-cover"
                     /> */}
 
-                    <div className="bg-gray-8 flex h-8 w-8 items-center justify-center rounded-full bg-gray-500 text-white">
-                      {participant?.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-black">{participant.name}</div>
-                      {/* {participant.status && <div className="text-xs text-red-500">{participant.status}</div>} */}
-                    </div>
+                  <div className="bg-gray-8 flex h-8 w-8 items-center justify-center rounded-full bg-gray-500 text-white">
+                    {participant?.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)}
                   </div>
-                  <div className="flex gap-1">
-                    {participant.audioOff !== undefined && (
-                      <div className="text-gray-400">
-                        {participant.audioOff ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                      </div>
-                    )}
+                  <div>
+                    <div className="text-sm font-medium text-black">{participant.name}</div>
+                    {/* {participant.status && <div className="text-xs text-red-500">{participant.status}</div>} */}
                   </div>
                 </div>
-              ))}
+                <div className="flex gap-1">
+                  {participant.audioOff !== undefined && (
+                    <div className="text-gray-400">
+                      {participant.audioOff ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </div>
+                  )}
+                  {participant.videoOff !== undefined && (
+                    <div className="text-gray-400">
+                      {participant.videoOff ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="absolute bottom-0 flex w-full items-center justify-between border-t bg-gray-50 p-3">
-          <button className="text-sm font-medium text-red-500">End</button>
-          <div className="flex gap-4">
-            <button className="text-sm text-gray-700">Invite</button>
-            <button className="text-sm text-gray-700">Mute All</button>
-            <button className="text-sm text-gray-700">···</button>
-          </div>
+          {!isLoading && connectionDetails.isAdmin && (
+            <>
+              <button className="text-sm font-medium text-red-500">End</button>
+              <div className="flex gap-4">
+                <button className="text-sm text-gray-700">Invite</button>
+                <button className="text-sm text-gray-700">Mute All</button>
+                <button className="text-sm text-gray-700">···</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

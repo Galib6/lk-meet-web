@@ -560,8 +560,8 @@ export default function WaitingRoom({ userName }: { userName: string }) {
   if (!isMounted) return null;
 
   return (
-    <div className="gray-800 flex min-h-screen items-center justify-center bg-gray-900 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-xl border border-gray-700 bg-gray-900 text-white shadow-2xl">
+    <div className="gray-800 flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-xl text-white">
         {/* Header */}
         {/* <div className="bg-gray-800 p-4">
           <h1 className="text-center text-xl font-semibold">Waiting Room</h1>
@@ -569,11 +569,11 @@ export default function WaitingRoom({ userName }: { userName: string }) {
         {/* Main content */}
         <div className="p-6">
           {/* Video preview */}
-          <div className="relative mb-6 aspect-video overflow-hidden rounded-lg border border-gray-700 bg-black">
+          <div className="relative mb-6 aspect-video overflow-hidden rounded-lg border border-gray-700">
             {cameraOn && hasPermissions && !cameraError ? (
               <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center">
+              <div className="flex h-full w-full items-center justify-center bg-gray-200">
                 <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-700 text-3xl font-semibold text-white">
                   {userName
                     ?.split(' ')
@@ -610,9 +610,9 @@ export default function WaitingRoom({ userName }: { userName: string }) {
           <div className="mb-6 text-center">
             <div className="mb-2 flex items-center justify-center gap-2">
               <div className="h-3 w-3 animate-pulse rounded-full bg-yellow-400"></div>
-              <p className="font-medium text-gray-300">Waiting for the host to let you in</p>
+              <p className="font-medium text-black">Waiting for the host to let you in</p>
             </div>
-            <p className="text-sm text-gray-400">Waiting time: {formatTime(waitingTime)}</p>
+            <p className="text-sm text-black">Waiting time: {formatTime(waitingTime)}</p>
           </div>
 
           {/* Controls */}
@@ -763,12 +763,14 @@ export default function WaitingRoom({ userName }: { userName: string }) {
           )}
 
           {/* Leave button */}
-          <button
-            onClick={() => router.push('/')}
-            className="w-full rounded-md bg-red-600 py-2 text-white transition-colors hover:bg-red-700"
-          >
-            Leave
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/')}
+              className="w-1/3 rounded-md bg-red-600 py-2 text-white transition-colors hover:bg-red-700"
+            >
+              Leave
+            </button>
+          </div>
         </div>
       </div>
     </div>

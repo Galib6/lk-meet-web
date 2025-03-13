@@ -18,10 +18,4 @@ export function pathToUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_APP_ORIGIN}${path}`;
 }
 
-export const PrivatePaths = [
-  Paths.meeting.room,
-  Paths.auth.login,
-  Paths.auth.signup,
-  Paths.auth.validate,
-  Paths.auth.resetPass,
-];
+export const PublicPaths = [Paths.root, Paths.auth.login, Paths.auth.signup, Paths.auth.validate, Paths.auth.resetPass];
