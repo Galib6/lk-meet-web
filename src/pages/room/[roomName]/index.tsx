@@ -23,7 +23,7 @@ export default function Index() {
   const meetingSessionRequests = useGetMeetingSessionRequests({ options: { roomName: roomName?.toString() } });
 
   useEffect(() => {
-    if (isLoading || connectionDetails?.token || !roomName) return;
+    if (isLoading ||  !roomName) return;
     const createSessionRequest = async () => {
       setLoading(true);
       const res = await Services.createSessionRequest({ roomName: roomName?.toString() });

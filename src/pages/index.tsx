@@ -65,13 +65,6 @@ export default function GoogleMeetClone() {
     socketService.connect(userId);
 
     const handleConnectionDetails = (data) => {
-      if (!data?.roomName || !data?.participantToken) return;
-
-      setConnectionDetails({
-        roomName: data.roomName,
-        isAdmin: true,
-        token: data.participantToken,
-      });
       router.push(Paths.meeting.toRoomPage(data.roomName));
     };
 
