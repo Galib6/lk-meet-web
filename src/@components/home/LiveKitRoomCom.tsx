@@ -4,6 +4,7 @@ import { IMeetingSessionRequest } from '@lib/interface/meetingSession.interfaces
 import { LiveKitRoom, RoomAudioRenderer, VideoConference, formatChatMessageLinks } from '@livekit/components-react';
 import '@livekit/components-styles';
 import { RoomConnectOptions } from 'livekit-client';
+import { useRouter } from 'next/router';
 import { useEffect, useMemo } from 'react';
 import { localStorageSate } from 'src/@base/constants/storage';
 import useLocalStorage from 'src/@base/hooks/useLocalStorage';
@@ -13,7 +14,9 @@ interface IProps {
 }
 
 const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
-  const [connectionDetails] = useLocalStorage(localStorageSate?.connectionDetails);
+  const router = useRouter();
+  const [connectionDetails, setConnectionDetails] = useLocalStorage(localStorageSate?.connectionDetails);
+  const [_, setAuthUserType] = useLocalStorage(localStorageSate?.userType);
 
   useEffect(() => {
     (async () => {
@@ -41,7 +44,9 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
       data-lk-theme="default"
       style={{ height: '100dvh' }}
       onDisconnected={() => {
-        // window.location.replace('/');
+        router.push('/');
+        setConnectionDetails({});
+        setAuthUserType(null);
       }}
     >
       <VideoConference chatMessageFormatter={formatChatMessageLinks} />

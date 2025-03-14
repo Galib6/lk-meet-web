@@ -10,18 +10,24 @@ interface ILocalStorageState {
     initialValue: {
       token?: string;
       roomName?: string;
-      isAdmin?: boolean;
     };
+  };
+  userType: {
+    key: string;
+    initialValue: 'admin' | 'participant';
   };
 }
 
 export const localStorageSate: ILocalStorageState = {
   connectionDetails: {
-    key: '_jhzsgfcsd',
+    key: '_jhzsgfcsd_',
     initialValue: {
       token: null,
       roomName: null,
-      isAdmin: false,
     },
+  },
+  userType: {
+    key: '_jhzzxc_',
+    initialValue: null,
   },
 };

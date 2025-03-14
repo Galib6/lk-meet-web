@@ -1,9 +1,9 @@
 import { ENV } from '.environments';
 import {
   IChangeRequestPayload,
-  ICountriesResponse,
   ICreateMeetingSession,
   ICreateSessionRequest,
+  IMeetingSessionResponse,
 } from '@lib/interface/meetingSession.interfaces';
 import { AxiosInstance } from 'src/@base/config';
 
@@ -12,7 +12,7 @@ import { $$ } from '@lib/utils/functions';
 import { IBaseResponse } from 'src/@base/interfaces/interfaces';
 
 export const Services = {
-  async createSessionRequest(options: ICreateSessionRequest): Promise<ICountriesResponse> {
+  async createSessionRequest(options: ICreateSessionRequest): Promise<IMeetingSessionResponse> {
     try {
       const res = await AxiosInstance.get(`/meeting-sessions/request?${$$.queryNormalizer(options)}`);
       return Promise.resolve(res?.data);

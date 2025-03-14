@@ -19,32 +19,55 @@ export default function Index() {
   const { roomName } = router?.query;
   const auth = getAuthSession();
   const [loading, setLoading] = useState(false);
-  const [connectionDetails, setConnectionDetails, isLoading] = useLocalStorage(localStorageSate?.connectionDetails);
+  const [connectionDetails, setConnectionDetails, isLocalStorageLoading] = useLocalStorage(
+    localStorageSate?.connectionDetails,
+  );
+  const [authUserType, setAuthUserType] = useLocalStorage(localStorageSate?.userType);
+
   const meetingSessionRequests = useGetMeetingSessionRequests({ options: { roomName: roomName?.toString() } });
 
   useEffect(() => {
-    if (isLoading ||  !roomName) return;
+    if (isLocalStorageLoading || !roomName) return;
+
     const createSessionRequest = async () => {
-      setLoading(true);
-      const res = await Services.createSessionRequest({ roomName: roomName?.toString() });
-      if (!res?.success) {
-        router.push('/');
-        return;
+      try {
+        setLoading(true);
+        const res = await Services.createSessionRequest({ roomName: roomName?.toString() });
+        if (!res?.success) {
+          toast.error(res.errorMessages?.[0]);
+          return;
+        }
+        setAuthUserType(res.data.userType);
+      } catch (error) {
+        console.error('Error creating session request:', error);
+        toast.error('Failed to create session. Try again.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     createSessionRequest();
-  }, [roomName]);
+  }, [roomName, isLocalStorageLoading]);
 
   useEffect(() => {
     if (!auth?.user?.id) return;
-    socketService.connect(auth?.user?.id.toString());
+
+    const authUserId = auth?.user?.id.toString();
+
+    // Ensure socket is connected before sending events
+    if (!socketService.isConnected(authUserId)) {
+      socketService.connect(authUserId);
+    }
+
     const handleConnectionDetails = (data: any) => {
-      setConnectionDetails({
-        roomName: data?.roomName,
-        token: data?.participantToken,
-        isAdmin: data?.isAdmin,
-      });
+      if (data?.roomName && data?.participantToken) {
+        setConnectionDetails({
+          roomName: data?.roomName,
+          token: data?.participantToken,
+        });
+      } else {
+        console.warn('Received invalid connection details:', data);
+      }
     };
 
     const handleNewRequest = (data: any) => {
@@ -87,19 +110,37 @@ export default function Index() {
     };
   }, [auth?.user?.id]);
 
-  return (
-    <div>
-      {loading ? (
+  const renderContent = () => {
+    if (loading || isLocalStorageLoading) {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <Spinner />
+        </div>
+      );
+    }
+
+    if (connectionDetails?.token) {
+      return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
+    }
+
+    if (authUserType === 'admin') {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <Spinner />
+        </div>
+      );
+    }
+
+    if (authUserType === 'participant') {
+      return <WaitingRoom userName={auth?.user?.name} />;
+    }
+
+    return (
+      <div className="flex h-screen items-center justify-center">
         <Spinner />
-      ) : (
-        <>
-          {connectionDetails?.token ? (
-            <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />
-          ) : (
-            <WaitingRoom userName={auth?.user?.name} />
-          )}
-        </>
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
+
+  return <div className="min-h-screen">{renderContent()}</div>;
 }

@@ -61,6 +61,7 @@ interface IMeetingSession {
   sessionType: string;
   sessionEnded: boolean;
   createdById: number;
+  userType: 'admin' | 'participant';
   updatedById?: any;
 }
 

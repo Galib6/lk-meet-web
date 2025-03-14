@@ -27,6 +27,11 @@ class SocketService {
     return this.sockets.get(userId)!;
   }
 
+  public isConnected(userId: string): boolean {
+    const socket = this.sockets.get(userId);
+    return !!socket && socket.connected;
+  }
+
   public disconnect(userId?: string): void {
     if (userId) {
       // Disconnect specific user

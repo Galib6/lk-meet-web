@@ -17,10 +17,11 @@ export default function ParticipantsPopup({
 }) {
   const router = useRouter();
   const { roomName } = router?.query;
-  const [connectionDetails, _setConnectionDetails, isLoading] = useLocalStorage(localStorageSate?.connectionDetails);
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const remoteParticipants = useRemoteParticipants();
+  const [authUserType, _, isLoading] = useLocalStorage(localStorageSate?.userType);
+  const userIsAdmin = authUserType === 'admin';
 
   const updateSessionRequestFn = useUpdateSessionRequest({
     config: {
@@ -97,7 +98,7 @@ export default function ParticipantsPopup({
         </div>
 
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 170px)' }}>
-          {!isLoading && connectionDetails.isAdmin && (
+          {!isLoading && userIsAdmin && (
             <div className="border-b p-3">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-1 text-sm font-medium text-black">
@@ -214,7 +215,7 @@ export default function ParticipantsPopup({
         </div>
 
         <div className="absolute bottom-0 flex w-full items-center justify-between border-t bg-gray-50 p-3">
-          {!isLoading && connectionDetails.isAdmin && (
+          {!isLoading && userIsAdmin && (
             <>
               <button className="text-sm font-medium text-red-500">End</button>
               <div className="flex gap-4">
