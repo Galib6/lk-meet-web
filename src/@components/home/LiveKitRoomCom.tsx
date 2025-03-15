@@ -41,7 +41,7 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
     return {
       videoCaptureDefaults: {
         deviceId: userChoice?.videoDeviceId,
-        resolution: VideoPresets.h2160,
+        resolution: VideoPresets.h720,
       },
       publishDefaults: {
         dtx: false,
