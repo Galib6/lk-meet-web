@@ -39,7 +39,8 @@ AxiosInstance.interceptors.response.use(
     } else if (error.response?.data?.success === false) {
       error.response?.data?.errorMessages?.map((x: string) => {
         return toast.error(x, {
-          autoClose: 1000,
+          autoClose: 10000,
+          hideProgressBar: true,
         });
       });
     }

@@ -16,6 +16,50 @@ export const useCreateSessionRequest = ({ options, config }: IUseCreateSessionRe
   });
 };
 
+//---------------- useCountry hook ------------------------------------
+type IUseFindParticipantList = {
+  options: ICreateSessionRequest;
+  config?: QueryConfig<typeof Services.findParticipantList>;
+};
+export const useFindParticipantList = ({ options, config }: IUseFindParticipantList) => {
+  return useQuery({
+    ...config,
+    queryKey: [Services.findParticipantList.name, options],
+    queryFn: () => Services.findParticipantList(options),
+  });
+};
+
+//---------------- useCountry hook ------------------------------------
+type IUseFindRequestSendStatus = {
+  options: ICreateSessionRequest;
+  config?: QueryConfig<typeof Services.findRequestSendStatus>;
+};
+export const useFindRequestSendStatus = ({ options, config }: IUseFindRequestSendStatus) => {
+  return useQuery({
+    ...config,
+    queryKey: [Services.findRequestSendStatus.name, options],
+    queryFn: () => Services.findRequestSendStatus(options),
+  });
+};
+
+//------------------ useMeetingSessionCreate hook ---------------------------------
+type IUseSendJoinRequest = {
+  config?: MutationConfig<typeof Services.sendJoinRequest>;
+};
+
+export const useSendJoinRequest = ({ config }: IUseSendJoinRequest = {}) => {
+  return useMutation({
+    ...config,
+    mutationFn: Services.sendJoinRequest,
+    onSettled: (data) => {
+      if (!data?.success) return;
+      queryClient.invalidateQueries({
+        queryKey: [Services.findRequestSendStatus.name],
+      });
+    },
+  });
+};
+
 //------------------ useMeetingSessionCreate hook ---------------------------------
 type IUseMeetingSessionCreate = {
   config?: MutationConfig<typeof Services.createMeetingSession>;

@@ -21,6 +21,7 @@ export default function ParticipantsPopup({
   const popupRef = useRef<HTMLDivElement>(null);
   const remoteParticipants = useRemoteParticipants();
   const [authUserType, _, isLoading] = useLocalStorage(localStorageSate?.userType);
+
   const userIsAdmin = authUserType === 'admin';
 
   const updateSessionRequestFn = useUpdateSessionRequest({
@@ -218,11 +219,6 @@ export default function ParticipantsPopup({
           {!isLoading && userIsAdmin && (
             <>
               <button className="text-sm font-medium text-red-500">End</button>
-              <div className="flex gap-4">
-                <button className="text-sm text-gray-700">Invite</button>
-                <button className="text-sm text-gray-700">Mute All</button>
-                <button className="text-sm text-gray-700">···</button>
-              </div>
             </>
           )}
         </div>

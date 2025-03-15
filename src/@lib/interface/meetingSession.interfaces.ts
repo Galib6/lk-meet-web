@@ -7,8 +7,21 @@ export interface IMeetingSessionResponse extends IBaseResponse {
   data: IMeetingSession;
 }
 
+export interface IParticipantListResponse extends IBaseResponse {
+  data: IParticipantList[];
+}
+
+export interface IParticipantList {
+  name: string;
+}
 export interface ICountriesResponse extends IBaseResponse {
   data: IMeetingSession[];
+}
+
+export interface IRequestSendStatusResponse extends IBaseResponse {
+  data: {
+    sent: true;
+  };
 }
 
 export interface ICreateMeetingSession {

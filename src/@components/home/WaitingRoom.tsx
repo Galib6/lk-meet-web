@@ -2,9 +2,15 @@
 
 import type React from 'react';
 
+import Header from '@components/home/Header';
+import AvatarGroup from '@components/room/AvatarGroup';
+import { useFindParticipantList, useFindRequestSendStatus } from '@lib/hooks/hooks';
 import { Mic, MicOff, Settings, Video, VideoOff, Volume2 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
+import { Modal } from 'src/@base/components/Modal';
+import { localStorageSate } from 'src/@base/constants/storage';
+import useLocalStorage from 'src/@base/hooks/useLocalStorage';
 
 interface MediaDevice {
   deviceId: string;
@@ -12,17 +18,19 @@ interface MediaDevice {
   label: string;
 }
 
-export default function WaitingRoom({ userName }: { userName: string }) {
+export default function WaitingRoom({ userName, onSendRequest }: { userName: string; onSendRequest: () => void }) {
   const router = useRouter();
+  const { roomName } = router?.query;
   const [cameraOn, setCameraOn] = useState(false);
   const [micOn, setMicOn] = useState(false);
   // const [userName, setUserName] = useState('John Doe');
-  const [waitingTime, setWaitingTime] = useState(0);
+  // const [waitingTime, setWaitingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [hasPermissions, setHasPermissions] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [_, setUserChoice] = useLocalStorage(localStorageSate.useChoice);
 
   // Device states
   const [videoDevices, setVideoDevices] = useState<MediaDevice[]>([]);
@@ -31,6 +39,7 @@ export default function WaitingRoom({ userName }: { userName: string }) {
   const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>('');
   const [selectedAudioInputDevice, setSelectedAudioInputDevice] = useState<string>('');
   const [selectedAudioOutputDevice, setSelectedAudioOutputDevice] = useState<string>('');
+  const [mediaOperationInProgress, setMediaOperationInProgress] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
@@ -38,12 +47,17 @@ export default function WaitingRoom({ userName }: { userName: string }) {
   const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
   const mediaStream = useRef<MediaStream | null>(null);
   const animationFrame = useRef<number | null>(null);
-  const mediaOperationInProgress = useRef<boolean>(false);
 
   useEffect(() => {
     setIsMounted(true);
+    setUserChoice(null);
   }, []);
 
+  const requestSendStatusQuery = useFindRequestSendStatus({
+    options: { roomName: roomName?.toString() },
+  });
+
+  const meetingSessionParticipants = useFindParticipantList({ options: { roomName: roomName?.toString() } });
   // Safely stop media stream
   const safelyStopMediaStream = () => {
     if (mediaStream.current) {
@@ -98,11 +112,11 @@ export default function WaitingRoom({ userName }: { userName: string }) {
 
   // Enumerate available media devices with retry
   const getAvailableDevices = async (retryCount = 0) => {
-    if (mediaOperationInProgress.current) {
+    if (mediaOperationInProgress) {
       return;
     }
 
-    mediaOperationInProgress.current = true;
+    setMediaOperationInProgress(true);
 
     try {
       // We need to request permissions first to get labeled devices
@@ -139,7 +153,7 @@ export default function WaitingRoom({ userName }: { userName: string }) {
                 return;
               } else {
                 alert('Please allow access to at least one of camera or microphone to use the waiting room');
-                mediaOperationInProgress.current = false;
+                setMediaOperationInProgress(false);
                 return;
               }
             }
@@ -204,7 +218,7 @@ export default function WaitingRoom({ userName }: { userName: string }) {
     } catch (err) {
       console.error('Error enumerating devices:', err);
     } finally {
-      mediaOperationInProgress.current = false;
+      setMediaOperationInProgress(false);
     }
   };
 
@@ -222,9 +236,9 @@ export default function WaitingRoom({ userName }: { userName: string }) {
 
   // Function to specifically set up camera
   const setupCamera = async () => {
-    if (!cameraOn || mediaOperationInProgress.current) return;
+    if (!cameraOn || mediaOperationInProgress) return;
 
-    mediaOperationInProgress.current = true;
+    setMediaOperationInProgress(true);
     setCameraError(null);
 
     try {
@@ -240,7 +254,7 @@ export default function WaitingRoom({ userName }: { userName: string }) {
             videoRef.current.srcObject = mediaStream.current;
           }
 
-          mediaOperationInProgress.current = false;
+          setMediaOperationInProgress(false);
           return;
         }
       }
@@ -288,15 +302,15 @@ export default function WaitingRoom({ userName }: { userName: string }) {
       setCameraError(err instanceof Error ? err.message : 'Unknown error');
       setCameraOn(false);
     } finally {
-      mediaOperationInProgress.current = false;
+      setMediaOperationInProgress(false);
     }
   };
 
   // Function to specifically set up microphone
   const setupMicrophone = async () => {
-    if (!micOn || mediaOperationInProgress.current) return;
+    if (!micOn || mediaOperationInProgress) return;
 
-    mediaOperationInProgress.current = true;
+    setMediaOperationInProgress(true);
 
     try {
       // If we already have a stream with audio, use it
@@ -309,7 +323,7 @@ export default function WaitingRoom({ userName }: { userName: string }) {
           // Set up audio analyzer - always recreate it to ensure proper functioning
           setupAudioAnalyzer();
 
-          mediaOperationInProgress.current = false;
+          setMediaOperationInProgress(false);
           return;
         }
       }
@@ -355,7 +369,7 @@ export default function WaitingRoom({ userName }: { userName: string }) {
       console.error('Error setting up microphone:', err);
       setMicOn(false);
     } finally {
-      mediaOperationInProgress.current = false;
+      setMediaOperationInProgress(false);
     }
   };
 
@@ -451,40 +465,44 @@ export default function WaitingRoom({ userName }: { userName: string }) {
   }, [micOn, selectedAudioInputDevice]);
 
   // Update waiting time
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setWaitingTime((prev) => prev + 1);
-    }, 1000);
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     setWaitingTime((prev) => prev + 1);
+  //   }, 1000);
 
-    return () => clearInterval(timer);
-  }, []);
+  //   return () => clearInterval(timer);
+  // }, []);
 
   // Format waiting time
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  // const formatTime = (seconds: number) => {
+  //   const mins = Math.floor(seconds / 60);
+  //   const secs = seconds % 60;
+  //   return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  // };
 
   // Toggle camera
   const toggleCamera = () => {
-    if (mediaOperationInProgress.current) return;
+    if (mediaOperationInProgress) return;
     setCameraOn(!cameraOn);
+    setUserChoice((prev) => ({ ...prev, video: !cameraOn }));
   };
 
   // Toggle microphone
   const toggleMic = () => {
-    if (mediaOperationInProgress.current) return;
+    if (mediaOperationInProgress) return;
     setMicOn(!micOn);
+    setUserChoice((prev) => ({ ...prev, audio: !micOn }));
   };
 
   // Handle device selection changes
   const handleVideoDeviceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedVideoDevice(e.target.value);
+    setUserChoice((prev) => ({ ...prev, videoDeviceId: e.target.value }));
   };
 
   const handleAudioInputDeviceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedAudioInputDevice(e.target.value);
+    setUserChoice((prev) => ({ ...prev, audioDeviceId: e.target.value }));
   };
 
   const handleAudioOutputDeviceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -560,215 +578,243 @@ export default function WaitingRoom({ userName }: { userName: string }) {
   if (!isMounted) return null;
 
   return (
-    <div className="gray-800 flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-xl text-white">
-        {/* Header */}
-        {/* <div className="bg-gray-800 p-4">
-          <h1 className="text-center text-xl font-semibold">Waiting Room</h1>
-        </div> */}
-        {/* Main content */}
-        <div className="p-6">
-          {/* Video preview */}
-          <div className="relative mb-6 aspect-video overflow-hidden rounded-lg border border-gray-700">
-            {cameraOn && hasPermissions && !cameraError ? (
-              <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gray-200">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-700 text-3xl font-semibold text-white">
-                  {userName
-                    ?.split(' ')
-                    .map((name) => name[0])
-                    .join('')}
-                </div>
-              </div>
-            )}
-
-            {/* User name overlay */}
-            <div className="absolute bottom-3 left-3 rounded-md bg-black bg-opacity-70 px-3 py-1 text-sm text-white">
-              {userName}
-            </div>
-
-            {/* Loading indicator */}
-            {mediaOperationInProgress.current && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-white"></div>
-              </div>
-            )}
-
-            {/* Camera error message */}
-            {cameraError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
-                <div className="p-4 text-center">
-                  <p className="mb-2 text-red-400">Camera Error</p>
-                  <p className="text-sm text-gray-300">{cameraError}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Status message */}
-          <div className="mb-6 text-center">
-            <div className="mb-2 flex items-center justify-center gap-2">
-              <div className="h-3 w-3 animate-pulse rounded-full bg-yellow-400"></div>
-              <p className="font-medium text-black">Waiting for the host to let you in</p>
-            </div>
-            <p className="text-sm text-black">Waiting time: {formatTime(waitingTime)}</p>
-          </div>
-
-          {/* Controls */}
-          <div className="mb-6 flex items-center justify-center gap-4">
-            <button
-              onClick={toggleMic}
-              disabled={mediaOperationInProgress.current}
-              className={`rounded-full p-3 ${
-                micOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-900 hover:bg-red-800'
-              } transition-colors ${mediaOperationInProgress.current ? 'cursor-not-allowed opacity-50' : ''}`}
-            >
-              {micOn ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
-            </button>
-
-            <button
-              onClick={toggleCamera}
-              disabled={mediaOperationInProgress.current}
-              className={`rounded-full p-3 ${
-                cameraOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-900 hover:bg-red-800'
-              } transition-colors ${mediaOperationInProgress.current ? 'cursor-not-allowed opacity-50' : ''}`}
-            >
-              {cameraOn ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
-            </button>
-
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              disabled={mediaOperationInProgress.current}
-              className={`rounded-full bg-gray-700 p-3 transition-colors hover:bg-gray-600 ${
-                mediaOperationInProgress.current ? 'cursor-not-allowed opacity-50' : ''
-              }`}
-            >
-              <Settings className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Audio level indicator */}
-          {micOn && hasPermissions && (
-            <div className="mb-6">
-              <div className="mb-1 flex items-center gap-2">
-                <Volume2 className="h-4 w-4 text-gray-400" />
-                <p className="text-sm text-gray-400">Microphone</p>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-700">
-                <div
-                  className="h-full bg-green-500 transition-all duration-100"
-                  style={{ width: `${audioLevel * 100}%` }}
-                ></div>
-              </div>
-            </div>
-          )}
-
-          {/* Settings panel */}
-          {showSettings && (
-            <div className="animate-fadeIn mb-6 rounded-lg border border-gray-700 bg-gray-800 p-4">
-              <h3 className="mb-3 font-medium">Audio and Video Settings</h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm text-gray-400">Camera</label>
-                  <select
-                    className="w-full rounded-md border border-gray-600 bg-gray-700 p-2 text-sm text-white"
-                    value={selectedVideoDevice}
-                    onChange={handleVideoDeviceChange}
-                    disabled={videoDevices.length === 0 || mediaOperationInProgress.current}
-                  >
-                    {videoDevices.length === 0 ? (
-                      <option value="">No cameras available</option>
-                    ) : (
-                      videoDevices.map((device) => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm text-gray-400">Microphone</label>
-                  <select
-                    className="w-full rounded-md border border-gray-600 bg-gray-700 p-2 text-sm text-white"
-                    value={selectedAudioInputDevice}
-                    onChange={handleAudioInputDeviceChange}
-                    disabled={audioInputDevices.length === 0 || mediaOperationInProgress.current}
-                  >
-                    {audioInputDevices.length === 0 ? (
-                      <option value="">No microphones available</option>
-                    ) : (
-                      audioInputDevices.map((device) => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm text-gray-400">Speaker</label>
-                  <div className="flex gap-2">
-                    <select
-                      className="flex-1 rounded-md border border-gray-600 bg-gray-700 p-2 text-sm text-white"
-                      value={selectedAudioOutputDevice}
-                      onChange={handleAudioOutputDeviceChange}
-                      disabled={
-                        audioOutputDevices.length === 0 ||
-                        !('setSinkId' in HTMLMediaElement.prototype) ||
-                        mediaOperationInProgress.current
-                      }
-                    >
-                      {!('setSinkId' in HTMLMediaElement.prototype) ? (
-                        <option value="">Speaker selection not supported</option>
-                      ) : audioOutputDevices.length === 0 ? (
-                        <option value="">No speakers available</option>
-                      ) : (
-                        audioOutputDevices.map((device) => (
-                          <option key={device.deviceId} value={device.deviceId}>
-                            {device.label}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    <button
-                      onClick={testAudioOutput}
-                      className="rounded-md bg-gray-600 p-2 text-sm transition-colors hover:bg-gray-500"
-                      disabled={
-                        !('setSinkId' in HTMLMediaElement.prototype) ||
-                        audioOutputDevices.length === 0 ||
-                        mediaOperationInProgress.current
-                      }
-                    >
-                      Test
-                    </button>
+    <div>
+      <Header />
+      <div className="flex h-auto w-full flex-col items-center justify-center gap-10 md:h-[700px] md:flex-row">
+        <div className="w-full max-w-[700px] overflow-hidden rounded-xl text-white">
+          {/* Header */}
+          {/* Main content */}
+          <div className="p-6">
+            {/* Video preview */}
+            <div className="relative z-10 mb-6 aspect-video overflow-hidden rounded-lg border border-gray-700">
+              {cameraOn && hasPermissions && !cameraError ? (
+                <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gray-200">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-700 text-3xl font-semibold text-white">
+                    {userName
+                      ?.split(' ')
+                      .map((name) => name[0])
+                      .join('')}
                   </div>
                 </div>
+              )}
 
-                <button
-                  onClick={() => getAvailableDevices()}
-                  disabled={mediaOperationInProgress.current}
-                  className={`w-full rounded-md bg-gray-700 p-2 text-sm transition-colors hover:bg-gray-600 ${
-                    mediaOperationInProgress.current ? 'cursor-not-allowed opacity-50' : ''
-                  }`}
-                >
-                  Refresh Devices
-                </button>
+              {/* User name overlay */}
+              <div className="absolute bottom-3 left-3 rounded-md bg-black bg-opacity-70 px-3 py-1 text-sm text-white">
+                {userName}
               </div>
-            </div>
-          )}
 
-          {/* Leave button */}
-          <div className="flex justify-center">
+              {/* Loading indicator */}
+              {mediaOperationInProgress && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                  <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-white"></div>
+                </div>
+              )}
+
+              {/* Camera error message */}
+              {cameraError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+                  <div className="p-4 text-center">
+                    <p className="mb-2 text-red-400">Camera Error</p>
+                    <p className="text-sm text-gray-300">{cameraError}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Status message */}
+            <div className="mb-6 text-center">
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <div className="h-3 w-3 animate-pulse rounded-full bg-yellow-400"></div>
+                <p className="font-medium text-black">Ask to join this meeting</p>
+              </div>
+              {/* <p className="text-sm text-black">Waiting time: {formatTime(waitingTime)}</p> */}
+            </div>
+
+            {/* Controls */}
+            <div className="mb-6 flex items-center justify-center gap-4">
+              <button
+                onClick={toggleMic}
+                disabled={mediaOperationInProgress}
+                className={`rounded-full p-3 ${
+                  micOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-900 hover:bg-red-800'
+                } transition-colors ${mediaOperationInProgress ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                {micOn ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+              </button>
+
+              <button
+                onClick={toggleCamera}
+                disabled={mediaOperationInProgress}
+                className={`rounded-full p-3 ${
+                  cameraOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-900 hover:bg-red-800'
+                } transition-colors ${mediaOperationInProgress ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                {cameraOn ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+              </button>
+
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                disabled={mediaOperationInProgress}
+                className={`rounded-full bg-gray-700 p-3 transition-colors hover:bg-gray-600 ${
+                  mediaOperationInProgress ? 'cursor-not-allowed opacity-50' : ''
+                }`}
+              >
+                <Settings className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Audio level indicator */}
+            {micOn && hasPermissions && (
+              <div className="mb-6">
+                <div className="mb-1 flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-gray-400" />
+                  <p className="text-sm text-gray-400">Microphone</p>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-gray-700">
+                  <div
+                    className="h-full bg-green-500 transition-all duration-100"
+                    style={{ width: `${audioLevel * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Audio and Video Settings">
+              <div className="animate-fadeIn rounded-lg border p-4">
+                <div className="space-y-4">
+                  <div className="flex flex-col justify-center gap-4 md:flex-row">
+                    <div className="w-[300px]">
+                      <label className="mb-1 block text-sm text-gray-400">Camera</label>
+                      <select
+                        className="w-full rounded-md border border-gray-600 p-2 text-sm text-black"
+                        value={selectedVideoDevice}
+                        onChange={handleVideoDeviceChange}
+                        disabled={videoDevices.length === 0 || mediaOperationInProgress}
+                      >
+                        {videoDevices.length === 0 ? (
+                          <option value="">No cameras available</option>
+                        ) : (
+                          videoDevices.map((device) => (
+                            <option key={device.deviceId} value={device.deviceId}>
+                              {device.label}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+
+                    <div className="w-[300px]">
+                      <label className="mb-1 block text-sm text-gray-400">Microphone</label>
+                      <select
+                        className="w-full rounded-md border border-gray-600 p-2 text-sm text-black"
+                        value={selectedAudioInputDevice}
+                        onChange={handleAudioInputDeviceChange}
+                        disabled={audioInputDevices.length === 0 || mediaOperationInProgress}
+                      >
+                        {audioInputDevices.length === 0 ? (
+                          <option value="">No microphones available</option>
+                        ) : (
+                          audioInputDevices.map((device) => (
+                            <option key={device.deviceId} value={device.deviceId}>
+                              {device.label}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm text-gray-400">Speaker</label>
+                    <div className="flex gap-2">
+                      <select
+                        className="flex-1 rounded-md border border-gray-600 p-2 text-sm text-black"
+                        value={selectedAudioOutputDevice}
+                        onChange={handleAudioOutputDeviceChange}
+                        disabled={
+                          audioOutputDevices.length === 0 ||
+                          !('setSinkId' in HTMLMediaElement.prototype) ||
+                          mediaOperationInProgress
+                        }
+                      >
+                        {!('setSinkId' in HTMLMediaElement.prototype) ? (
+                          <option value="">Speaker selection not supported</option>
+                        ) : audioOutputDevices.length === 0 ? (
+                          <option value="">No speakers available</option>
+                        ) : (
+                          audioOutputDevices.map((device) => (
+                            <option key={device.deviceId} value={device.deviceId}>
+                              {device.label}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <button
+                        onClick={testAudioOutput}
+                        className="rounded-md bg-gray-600 p-2 text-sm transition-colors hover:bg-gray-500"
+                        disabled={
+                          !('setSinkId' in HTMLMediaElement.prototype) ||
+                          audioOutputDevices.length === 0 ||
+                          mediaOperationInProgress
+                        }
+                      >
+                        Test
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => getAvailableDevices()}
+                    disabled={mediaOperationInProgress}
+                    className={`w-full rounded-md bg-gray-600 p-2 text-sm transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      {mediaOperationInProgress ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <span>Refresh Devices</span>
+                      )}
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </Modal>
+
+            {/* Settings panel */}
+            {/* {showSettings && (
+             
+            )} */}
+
+            {/* Leave button */}
+          </div>
+        </div>
+
+        <div className="flex !h-full flex-col items-center justify-center gap-4 pl-0 md:pl-[50px]">
+          <div>
+            <p className="mb-[30px] text-[24px] font-bold">Members in this meeting..</p>
+            <AvatarGroup users={meetingSessionParticipants?.data?.data || []} />
+          </div>
+          <div className="mt-[30px] flex flex-col justify-center">
             <button
-              onClick={() => router.push('/')}
-              className="w-1/3 rounded-md bg-red-600 py-2 text-white transition-colors hover:bg-red-700"
+              onClick={onSendRequest}
+              disabled={requestSendStatusQuery?.data?.data.sent}
+              className={`w-[300px] rounded-md bg-gray-900 p-2 text-sm transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70`}
             >
-              Leave
+              <div className="flex items-center justify-center gap-2 text-white">
+                {requestSendStatusQuery?.data?.data.sent ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    <span>Ask to Join</span>
+                  </>
+                ) : (
+                  <span>Ask to Join</span>
+                )}
+              </div>
             </button>
           </div>
         </div>

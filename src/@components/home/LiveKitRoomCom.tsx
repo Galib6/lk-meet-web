@@ -1,9 +1,10 @@
 import { ENV } from '.environments';
 import ParticipantsPopup from '@components/room/ParticipantPopUp';
+import LiveKitParticipantMonitor from '@components/room/RoomParticipantMonitor';
 import { IMeetingSessionRequest } from '@lib/interface/meetingSession.interfaces';
-import { LiveKitRoom, RoomAudioRenderer, VideoConference, formatChatMessageLinks } from '@livekit/components-react';
+import { formatChatMessageLinks, LiveKitRoom, VideoConference } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { RoomConnectOptions } from 'livekit-client';
+import { Room, RoomConnectOptions, RoomOptions, VideoCodec, VideoPresets } from 'livekit-client';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo } from 'react';
 import { localStorageSate } from 'src/@base/constants/storage';
@@ -17,6 +18,7 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
   const router = useRouter();
   const [connectionDetails, setConnectionDetails] = useLocalStorage(localStorageSate?.connectionDetails);
   const [_, setAuthUserType] = useLocalStorage(localStorageSate?.userType);
+  const [userChoice, __, loading] = useLocalStorage(localStorageSate.useChoice);
 
   useEffect(() => {
     (async () => {
@@ -33,10 +35,37 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
       autoSubscribe: true,
     };
   }, []);
+
+  const roomOptions = useMemo((): RoomOptions => {
+    let videoCodec: VideoCodec | undefined = 'av1';
+    return {
+      videoCaptureDefaults: {
+        deviceId: userChoice?.videoDeviceId,
+        resolution: VideoPresets.h2160,
+      },
+      publishDefaults: {
+        dtx: false,
+        // videoSimulcastLayers: props.options.hq
+        //   ? [VideoPresets.h1080, VideoPresets.h720]
+        //   : [VideoPresets.h540, VideoPresets.h216],
+        videoSimulcastLayers: [VideoPresets.h1080, VideoPresets.h720],
+        videoCodec,
+      },
+      audioCaptureDefaults: {
+        deviceId: userChoice?.audioDeviceId,
+      },
+      adaptiveStream: { pixelDensity: 'screen' },
+      dynacast: true,
+    };
+  }, [loading]);
+
+  const room = useMemo(() => new Room(roomOptions), []);
+
   return (
     <LiveKitRoom
-      video={false}
-      audio={false}
+      video={userChoice?.video ?? false}
+      audio={userChoice?.audio ?? false}
+      room={room}
       token={connectionDetails?.token}
       serverUrl={ENV.liveKitUrl}
       connectOptions={connectOptions}
@@ -45,17 +74,16 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
       style={{ height: '100dvh' }}
       onDisconnected={() => {
         router.push('/');
-        setConnectionDetails({});
+        setConnectionDetails(null);
         setAuthUserType(null);
       }}
     >
-      <VideoConference chatMessageFormatter={formatChatMessageLinks} />
-      {/* The RoomAudioRenderer takes care of room-wide audio for you. */}
-      <RoomAudioRenderer />
-      {/* Controls for the user to start/stop audio, video, and screen
-            share tracks and to leave the room. */}
-      {/* <ControlBar /> */}
+      <VideoConference
+        chatMessageFormatter={formatChatMessageLinks}
+        // SettingsComponent={true ? SettingsMenu : undefined}
+      />
       <ParticipantsPopup meetingSessionRequests={meetingSessionRequests} />
+      <LiveKitParticipantMonitor />
     </LiveKitRoom>
   );
 };
