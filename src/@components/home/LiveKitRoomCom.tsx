@@ -37,7 +37,7 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
   }, []);
 
   const roomOptions = useMemo((): RoomOptions => {
-    let videoCodec: VideoCodec | undefined = 'av1';
+    let videoCodec: VideoCodec | undefined = 'vp9';
     return {
       videoCaptureDefaults: {
         deviceId: userChoice?.videoDeviceId,
@@ -48,11 +48,13 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
         // videoSimulcastLayers: props.options.hq
         //   ? [VideoPresets.h1080, VideoPresets.h720]
         //   : [VideoPresets.h540, VideoPresets.h216],
-        videoSimulcastLayers: [VideoPresets.h1080, VideoPresets.h720],
+        videoSimulcastLayers: [VideoPresets.h540, VideoPresets.h216],
         videoCodec,
       },
       audioCaptureDefaults: {
         deviceId: userChoice?.audioDeviceId,
+        echoCancellation: true,
+        noiseSuppression: true,
       },
       adaptiveStream: { pixelDensity: 'screen' },
       dynacast: true,
