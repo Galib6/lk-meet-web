@@ -32,10 +32,8 @@ AxiosInstance.interceptors.response.use(
     if (!error.response) throw error;
     if (typeof window === 'undefined') return error.response;
     if (error?.response?.status === 401) {
-      if (window.location.pathname?.startsWith('/user')) {
-        cookies.clear();
-        window.location.reload();
-      }
+      cookies.clear();
+      window.location.reload();
     } else if (error.response?.data?.success === false) {
       error.response?.data?.errorMessages?.map((x: string) => {
         return toast.error(x, {

@@ -1,19 +1,26 @@
 import { getAuthSession } from '@components/auth/lib/utils';
-import LiveKitRoomCom from '@components/home/LiveKitRoomCom';
-import WaitingRoom from '@components/home/WaitingRoom';
+import { LoadingScreen } from '@components/room/LoadingScreen';
 import { useGetMeetingSessionRequests, useSendJoinRequest } from '@lib/hooks/hooks';
 import { Services } from '@lib/services/service';
 import { socketService } from '@lib/services/socket';
 import { playSound } from '@lib/utils/notificationSound';
 import '@livekit/components-styles';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import Spinner from 'src/@base/components/Spinner';
 import { queryClient } from 'src/@base/config';
 import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
 import { localStorageSate } from 'src/@base/constants/storage';
 import useLocalStorage from 'src/@base/hooks/useLocalStorage';
+
+const WaitingRoom = dynamic(() => import('@components/home/WaitingRoom'), {
+  loading: () => <LoadingScreen />,
+});
+
+const LiveKitRoomCom = dynamic(() => import('@components/home/LiveKitRoomCom'), {
+  loading: () => <LoadingScreen />,
+});
 
 export default function Index() {
   const router = useRouter();
@@ -108,39 +115,31 @@ export default function Index() {
     },
   });
 
-  // Memoized content rendering
-  const content = useMemo(() => {
-    if (loading || isLocalStorageLoading) {
-      return (
-        <div className="flex min-h-screen items-center justify-center">
-          <Spinner />
-        </div>
-      );
-    }
+  // Replace the memoized content with direct rendering
+  if (loading || isLocalStorageLoading) {
+    return <LoadingScreen />;
+  }
 
-    if (connectionDetails?.token) {
-      return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
-    }
+  if (connectionDetails?.token) {
+    return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
+  }
 
-    if (authUserType === 'admin' || authUserType === 'participant') {
-      return authUserType === 'participant' ? (
-        <WaitingRoom
-          userName={auth?.user?.name}
-          onSendRequest={() => sendJoinRequestFn.mutate({ roomName: roomName.toString() })}
-        />
-      ) : (
-        <div className="flex min-h-screen items-center justify-center">
-          <Spinner />
-        </div>
-      );
-    }
-
+  if (authUserType === 'participant') {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner />
-      </div>
+      <WaitingRoom
+        userName={auth?.user?.name}
+        onSendRequest={() =>
+          sendJoinRequestFn.mutate({
+            roomName: roomName?.toString(),
+          })
+        }
+      />
     );
-  }, [loading, isLocalStorageLoading, connectionDetails?.token, authUserType, meetingSessionRequests?.data?.data]);
+  }
 
-  return content;
+  if (authUserType === 'admin') {
+    return <LoadingScreen />;
+  }
+
+  return <LoadingScreen />;
 }
