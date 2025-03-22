@@ -7,7 +7,7 @@ import { playSound } from '@lib/utils/notificationSound';
 import '@livekit/components-styles';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { queryClient } from 'src/@base/config';
 import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
@@ -27,7 +27,6 @@ export default function Index() {
   const { roomName } = router?.query;
   const auth = getAuthSession();
   const userId = auth?.user?.id?.toString();
-  const [loading, setLoading] = useState(false);
   const [connectionDetails, setConnectionDetails, isLocalStorageLoading] = useLocalStorage(
     localStorageSate?.connectionDetails,
   );
@@ -41,21 +40,18 @@ export default function Index() {
 
     (async () => {
       try {
-        setLoading(true);
         setConnectionDetails(null);
+
         const res = await Services.createSessionRequest({ roomName: roomName?.toString() });
 
         if (!res?.success) {
           if (res.errorMessages?.[0]?.includes('Not Allowed')) router.push('/');
           return;
         }
-
         setAuthUserType(res?.data?.userType);
       } catch (error) {
         console.error('Error creating session request:', error);
         toast.error('Failed to create session. Try again.');
-      } finally {
-        setLoading(false);
       }
     })();
   }, [roomName, isLocalStorageLoading]);
@@ -63,7 +59,6 @@ export default function Index() {
   // Handle socket events efficiently
   useEffect(() => {
     if (!userId) return;
-
     // Ensure socket is connected
     if (!socketService.isConnected(userId)) {
       socketService.connect(userId);
@@ -115,11 +110,6 @@ export default function Index() {
     },
   });
 
-  // Replace the memoized content with direct rendering
-  if (loading || isLocalStorageLoading) {
-    return <LoadingScreen />;
-  }
-
   if (connectionDetails?.token) {
     return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
   }
@@ -135,10 +125,6 @@ export default function Index() {
         }
       />
     );
-  }
-
-  if (authUserType === 'admin') {
-    return <LoadingScreen />;
   }
 
   return <LoadingScreen />;

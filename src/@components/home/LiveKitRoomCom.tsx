@@ -40,7 +40,7 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
     let videoCodec: VideoCodec | undefined = 'vp9';
     return {
       videoCaptureDefaults: {
-        deviceId: userChoice?.videoDeviceId,
+        deviceId: userChoice?.videoDeviceId ?? null,
         resolution: VideoPresets.h720,
       },
       publishDefaults: {
@@ -52,10 +52,11 @@ const LiveKitRoomCom: React.FC<IProps> = ({ meetingSessionRequests }) => {
         videoCodec,
       },
       audioCaptureDefaults: {
-        deviceId: userChoice?.audioDeviceId,
+        deviceId: userChoice?.audioDeviceId ?? null,
         echoCancellation: true,
         noiseSuppression: true,
       },
+      disconnectOnPageLeave: true,
       adaptiveStream: { pixelDensity: 'screen' },
       dynacast: true,
     };
