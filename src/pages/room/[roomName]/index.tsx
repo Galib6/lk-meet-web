@@ -7,7 +7,7 @@ import { playSound } from '@lib/utils/notificationSound';
 import '@livekit/components-styles';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { queryClient } from 'src/@base/config';
 import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
@@ -27,6 +27,7 @@ export default function Index() {
   const { roomName } = router?.query;
   const auth = getAuthSession();
   const userId = auth?.user?.id?.toString();
+  const [isLoading, setIsLoading] = useState(false);
   const [connectionDetails, setConnectionDetails, isLocalStorageLoading] = useLocalStorage(
     localStorageSate?.connectionDetails,
   );
@@ -36,7 +37,11 @@ export default function Index() {
 
   // Fetch session request when roomName and localStorage state is ready
   useEffect(() => {
-    if (isLocalStorageLoading || !roomName) return;
+    if (isLocalStorageLoading || !roomName || !userId) return;
+    setIsLoading(true);
+    if (!socketService.isConnected(userId)) {
+      socketService.connect(userId);
+    }
 
     (async () => {
       try {
@@ -49,6 +54,7 @@ export default function Index() {
           return;
         }
         setAuthUserType(res?.data?.userType);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error creating session request:', error);
         toast.error('Failed to create session. Try again.');
@@ -109,6 +115,8 @@ export default function Index() {
       },
     },
   });
+
+  if (isLoading) return <LoadingScreen />;
 
   if (connectionDetails?.token) {
     return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
