@@ -7,7 +7,7 @@ import { playSound } from '@lib/utils/notificationSound';
 import '@livekit/components-styles';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { queryClient } from 'src/@base/config';
 import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
@@ -15,30 +15,54 @@ import { localStorageSate } from 'src/@base/constants/storage';
 import useLocalStorage from 'src/@base/hooks/useLocalStorage';
 
 const WaitingRoom = dynamic(() => import('@components/home/WaitingRoom'), {
-  loading: () => <LoadingScreen />,
+  loading: () => <LoadingCom />,
 });
 
 const LiveKitRoomCom = dynamic(() => import('@components/home/LiveKitRoomCom'), {
-  loading: () => <LoadingScreen />,
+  loading: () => <LoadingCom />,
 });
+
+export function LoadingCom() {
+  return <LoadingScreen />;
+}
 
 export default function Index() {
   const router = useRouter();
-  const { roomName } = router?.query;
+  const { roomName } = router.query;
   const auth = getAuthSession();
-  const userId = auth?.user?.id?.toString();
+  const userId = useMemo(() => auth?.user?.id?.toString(), [auth?.user?.id]);
+
   const [isLoading, setIsLoading] = useState(false);
+
   const [connectionDetails, setConnectionDetails, isLocalStorageLoading] = useLocalStorage(
     localStorageSate?.connectionDetails,
   );
+
   const [authUserType, setAuthUserType] = useLocalStorage(localStorageSate?.userType);
 
-  const meetingSessionRequests = useGetMeetingSessionRequests({ options: { roomName: roomName?.toString() } });
+  const meetingSessionRequests = useGetMeetingSessionRequests({
+    options: { roomName: roomName?.toString() },
+  });
 
-  // Fetch session request when roomName and localStorage state is ready
+  const sendJoinRequestFn = useSendJoinRequest({
+    config: {
+      onSuccess(data) {
+        if (!data?.success) return;
+      },
+    },
+  });
+
+  const handleSendRequest = useCallback(() => {
+    sendJoinRequestFn.mutate({
+      roomName: roomName?.toString(),
+    });
+  }, [sendJoinRequestFn, roomName]);
+
   useEffect(() => {
     if (isLocalStorageLoading || !roomName || !userId) return;
+
     setIsLoading(true);
+
     if (!socketService.isConnected(userId)) {
       socketService.connect(userId);
     }
@@ -47,32 +71,37 @@ export default function Index() {
       try {
         setConnectionDetails(null);
 
-        const res = await Services.createSessionRequest({ roomName: roomName?.toString() });
+        const res = await Services.createSessionRequest({ roomName: roomName.toString() });
 
         if (!res?.success) {
-          if (res.errorMessages?.[0]?.includes('Not Allowed')) router.push('/');
+          if (res.errorMessages?.[0]?.includes('Not Allowed')) {
+            router.push('/');
+          }
           return;
         }
-        setAuthUserType(res?.data?.userType);
+
+        setAuthUserType(res.data?.userType);
         setIsLoading(false);
       } catch (error) {
         console.error('Error creating session request:', error);
         toast.error('Failed to create session. Try again.');
       }
     })();
-  }, [roomName, isLocalStorageLoading]);
+  }, [roomName, userId, isLocalStorageLoading]);
 
-  // Handle socket events efficiently
   useEffect(() => {
     if (!userId) return;
-    // Ensure socket is connected
+
     if (!socketService.isConnected(userId)) {
       socketService.connect(userId);
     }
 
     const handleConnectionDetails = (data: any) => {
       if (data?.roomName && data?.participantToken) {
-        setConnectionDetails({ roomName: data.roomName, token: data.participantToken });
+        setConnectionDetails({
+          roomName: data.roomName,
+          token: data.participantToken,
+        });
       } else {
         console.warn('Invalid connection details received:', data);
       }
@@ -89,7 +118,7 @@ export default function Index() {
     };
 
     const handleOnRejection = () => {
-      toast.error(`Host rejected your request!`, {
+      toast.error('Host rejected your request!', {
         position: 'top-right',
         autoClose: 10000,
         hideProgressBar: true,
@@ -108,32 +137,27 @@ export default function Index() {
     };
   }, [userId]);
 
-  const sendJoinRequestFn = useSendJoinRequest({
-    config: {
-      onSuccess(data) {
-        if (!data?.success) return;
-      },
-    },
-  });
+  const renderContent = useMemo(() => {
+    if (isLoading || isLocalStorageLoading) return <LoadingCom />;
 
-  if (isLoading) return <LoadingScreen />;
+    if (connectionDetails?.token) {
+      return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
+    }
 
-  if (connectionDetails?.token) {
-    return <LiveKitRoomCom meetingSessionRequests={meetingSessionRequests?.data?.data} />;
-  }
+    if (authUserType === 'participant') {
+      return <WaitingRoom userName={auth?.user?.name} onSendRequest={handleSendRequest} />;
+    }
 
-  if (authUserType === 'participant') {
-    return (
-      <WaitingRoom
-        userName={auth?.user?.name}
-        onSendRequest={() =>
-          sendJoinRequestFn.mutate({
-            roomName: roomName?.toString(),
-          })
-        }
-      />
-    );
-  }
+    return <LoadingCom />;
+  }, [
+    isLoading,
+    isLocalStorageLoading,
+    connectionDetails?.token,
+    authUserType,
+    auth?.user?.name,
+    meetingSessionRequests?.data?.data,
+    handleSendRequest,
+  ]);
 
-  return <LoadingScreen />;
+  return renderContent;
 }
