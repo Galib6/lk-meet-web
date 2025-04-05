@@ -63,7 +63,7 @@ export default function Index() {
 
     setIsLoading(true);
 
-    if (!socketService.isConnected(userId)) {
+    if (!socketService.isConnected()) {
       socketService.connect(userId);
     }
 
@@ -92,7 +92,7 @@ export default function Index() {
   useEffect(() => {
     if (!userId) return;
 
-    if (!socketService.isConnected(userId)) {
+    if (!socketService.isConnected()) {
       socketService.connect(userId);
     }
 

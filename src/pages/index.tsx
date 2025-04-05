@@ -68,11 +68,11 @@ export default function GoogleMeetClone() {
       router.push(Paths.meeting.toRoomPage(data.roomName));
     };
 
-    socketService.on(SOCKET_EVENT.CONNECTION_DETAILS, handleConnectionDetails, userId);
+    socketService.on(SOCKET_EVENT.CONNECTION_DETAILS, handleConnectionDetails);
 
     // Cleanup function
     return () => {
-      socketService.off(SOCKET_EVENT.CONNECTION_DETAILS, handleConnectionDetails, userId);
+      socketService.off(SOCKET_EVENT.CONNECTION_DETAILS, handleConnectionDetails);
     };
   }, [auth?.user?.id, router]);
 
