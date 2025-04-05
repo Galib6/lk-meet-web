@@ -85,11 +85,8 @@ const Slider = () => {
                   </div>
 
                   <div className="mt-4 px-4 text-center sm:mt-6">
-                    <h2 className="mb-2 text-lg font-medium text-gray-800 sm:text-xl">{item.title}</h2>
-                    <p className="mx-auto max-w-md text-xs text-gray-600 sm:text-sm">{item.description}</p>
-                    <button className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 sm:px-6 sm:text-base">
-                      Start trial
-                    </button>
+                    <h2 className="mb-2 !text-[22px] font-medium text-gray-800 sm:text-xl">{item.title}</h2>
+                    <p className="mx-auto max-w-md text-[18px] text-gray-600">{item.description}</p>
                   </div>
                 </motion.div>
               ),

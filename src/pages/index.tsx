@@ -10,6 +10,7 @@ import { socketService } from '@lib/services/socket';
 import { Calendar, ChevronDown, Video } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'react-toastify';
 import { SOCKET_EVENT } from 'src/@base/constants/meetingSessionEvent';
 import { Paths } from 'src/@base/constants/paths';
 import { localStorageSate } from 'src/@base/constants/storage';
@@ -22,6 +23,24 @@ export default function GoogleMeetClone() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [_connectionDetails, setConnectionDetails] = useLocalStorage(localStorageSate?.connectionDetails);
+  const [meetingCode, setMeetingCode] = useState('');
+
+  const handleJoinMeeting = () => {
+    if (!meetingCode.trim()) {
+      toast.error('Please enter a meeting code');
+      return;
+    }
+
+    if (!auth?.user?.id) {
+      router.push({
+        pathname: Paths.auth.login,
+        query: { callbackUrl: router.asPath },
+      });
+      return;
+    }
+
+    router.push(Paths.meeting.toRoomPage(meetingCode.trim()));
+  };
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
@@ -78,43 +97,41 @@ export default function GoogleMeetClone() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <Header />
 
-      {/* Main Content */}
-      <main className="mx-auto mt-0 max-w-6xl px-4 py-6 sm:px-6 sm:py-12 lg:mt-[70px]">
-        <div className="grid items-center gap-8 md:grid-cols-2">
+      <main className="mx-auto mt-0 max-w-[1400px] px-4 py-6 sm:px-6 sm:py-12 lg:mt-[70px]">
+        <div className="grid items-center gap-12 md:grid-cols-2">
           {/* Left Column - Text Content */}
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-medium leading-tight text-gray-800 sm:text-4xl md:text-5xl">
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-3xl font-medium leading-tight text-gray-800 sm:text-5xl md:text-6xl lg:text-6xl">
                 Video calls and meetings for everyone
               </h1>
-              <p className="text-base text-gray-600 sm:text-lg">
+              <p className="text-lg text-gray-600 sm:text-xl lg:text-2xl">
                 Connect, collaborate and celebrate from anywhere with Sync Call
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <div className="relative">
                 <button
                   ref={buttonRef}
                   onClick={toggleDropdown}
-                  className="flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 sm:w-auto"
+                  className="flex w-full items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-lg font-medium text-white transition hover:bg-blue-700 sm:w-auto"
                 >
-                  <Video className="mr-2 h-5 w-5" />
+                  <Video className="mr-3 h-6 w-6" />
                   New meeting
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                  <ChevronDown className="ml-2 h-5 w-5" />
                 </button>
 
                 {dropdownOpen && (
                   <div
                     ref={dropdownRef}
-                    className="absolute left-0 top-full z-10 mt-1 w-64 rounded-md border border-gray-200 bg-white shadow-lg"
+                    className="absolute left-0 top-full z-10 mt-2 w-72 rounded-lg border border-gray-200 bg-white shadow-xl"
                   >
-                    <div className="py-1">
+                    <div className="py-2">
                       <button
-                        className="flex w-full items-center px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        className="flex w-full items-center px-6 py-4 text-left text-base text-gray-700 hover:bg-gray-50"
                         onClick={() => {
                           if (!auth?.user?.id) {
                             router.push({
@@ -127,20 +144,20 @@ export default function GoogleMeetClone() {
                           setDropdownOpen(false);
                         }}
                       >
-                        <Video className="mr-3 h-5 w-5 text-blue-600" />
+                        <Video className="mr-4 h-6 w-6 text-blue-600" />
                         <div>
                           <div className="font-medium">Create instant meeting</div>
-                          <div className="mt-0.5 text-xs text-gray-500">Start a meeting now</div>
+                          <div className="mt-1 text-sm text-gray-500">Start a meeting now</div>
                         </div>
                       </button>
                       <button
-                        className="flex w-full items-center px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        className="flex w-full items-center px-6 py-4 text-left text-base text-gray-700 hover:bg-gray-50"
                         onClick={() => setDropdownOpen(false)}
                       >
-                        <Calendar className="mr-3 h-5 w-5 text-blue-600" />
+                        <Calendar className="mr-4 h-6 w-6 text-blue-600" />
                         <div>
                           <div className="font-medium">Create meeting for later</div>
-                          <div className="mt-0.5 text-xs text-gray-500">Schedule in Google Calendar</div>
+                          <div className="mt-1 text-sm text-gray-500">Schedule in Google Calendar</div>
                         </div>
                       </button>
                     </div>
@@ -151,25 +168,32 @@ export default function GoogleMeetClone() {
               <div className="relative flex-1">
                 <input
                   type="text"
+                  value={meetingCode}
+                  onChange={(e) => setMeetingCode(e.target.value)}
                   placeholder="Enter a code or link"
-                  className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-6 py-3 text-lg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 transform px-2 font-medium text-blue-600">
+                <button
+                  onClick={handleJoinMeeting}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transform px-4 text-lg font-medium text-blue-600 hover:text-blue-700"
+                >
                   Join
                 </button>
               </div>
             </div>
 
-            <div className="border-t pt-6">
-              <a href="#" className="flex items-center text-sm text-blue-600 hover:underline">
+            <div className="border-t pt-8">
+              <a href="#" className="flex items-center text-lg text-blue-600 hover:underline">
                 Learn more
-                <span className="ml-1">about Sync Call</span>
+                <span className="ml-2">about Sync Call</span>
               </a>
             </div>
           </div>
 
           {/* Right Column - Carousel */}
-          <Slider />
+          <div className="w-full">
+            <Slider />
+          </div>
         </div>
       </main>
     </div>

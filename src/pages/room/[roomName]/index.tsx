@@ -77,6 +77,9 @@ export default function Index() {
           if (res.errorMessages?.[0]?.includes('Not Allowed')) {
             router.push('/');
           }
+          if (res.errorMessages?.[0]?.includes('room not found')) {
+            router.push('/');
+          }
           return;
         }
 
