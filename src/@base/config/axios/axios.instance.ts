@@ -1,6 +1,5 @@
 import { ENV } from '.environments';
 import { getAuthToken } from '@components/auth/lib/utils';
-import { socketService } from '@lib/services/socket';
 import { cookies } from '@lib/utils/cookies';
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'react-toastify';
@@ -18,7 +17,6 @@ AxiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     config.baseURL = ENV.apiUrl;
     config.headers['Authorization'] = `Bearer ${getAuthToken()}`;
-    config.headers['SocketId'] = socketService?.getSocket()?.id;
 
     return config;
   },
