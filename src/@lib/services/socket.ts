@@ -17,7 +17,6 @@ class SocketService {
   public connect(userId: string): Socket {
     if (!this.socket) {
       this.socket = io(`${ENV.apiBaseUrl}/meeting-session?userId=${userId}`, {
-        reconnection: true,
         transports: ['websocket'],
       });
     }
