@@ -108,7 +108,7 @@ export default function GoogleMeetClone() {
                 Video calls and meetings for everyone
               </h1>
               <p className="text-lg text-gray-600 sm:text-xl lg:text-2xl">
-                Connect, collaborate and celebrate from anywhere with Sync Call
+                Connect, collaborate and celebrate from anywhere with Googly Meet
               </p>
             </div>
 
@@ -185,7 +185,7 @@ export default function GoogleMeetClone() {
             <div className="border-t pt-8">
               <a href="#" className="flex items-center text-lg text-blue-600 hover:underline">
                 Learn more
-                <span className="ml-2">about Sync Call</span>
+                <span className="ml-2">about Googly Meet</span>
               </a>
             </div>
           </div>

@@ -21,14 +21,14 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between border-b bg-white px-4 py-3 sm:px-6">
-      <div className="mx-auto mt-0 max-w-[1400px]">
+    <header className="sticky top-0 z-50 border-b bg-white px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between">
         <div className="flex items-center">
           <div className="mr-2 flex items-center">
             <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-md bg-gray-700">
               <Rabbit className="h-5 w-5 text-white" />
             </div>
-            <span className="hidden text-xl font-medium text-gray-700 sm:inline">Sync Call</span>
+            <span className="hidden text-xl font-medium text-gray-700 sm:inline">Googly Meet</span>
           </div>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
